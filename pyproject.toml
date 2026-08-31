@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "airchinstall"
+version = "0.1.0"
+description = "A Chinese, terminal-first Arch Linux installation companion"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+dependencies = [
+  "httpx>=0.28",
+  "pydantic>=2.10",
+  "textual>=8.2",
+]
+
+[project.urls]
+Repository = "https://github.com/xyuuii/airchinstall"
+Issues = "https://github.com/xyuuii/airchinstall/issues"
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "ruff>=0.16",
+]
+
+[project.scripts]
+airchinstall = "airchinstall.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+airchinstall = ["data/*.bash", "data/*.toml"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

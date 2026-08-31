@@ -1,0 +1,13 @@
+.DS_Store
+.venv/
+.pytest_cache/
+.ruff_cache/
+.code-review-graph/
+__pycache__/
+*.egg-info/
+build/
+dist/
+.audit/
+.qemu/
+*.iso
+*.qcow2

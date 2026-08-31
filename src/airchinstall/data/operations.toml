@@ -1,0 +1,49 @@
+version = 1
+
+[[operations]]
+id = "inspect-uefi"
+title = "确认 UEFI 启动模式"
+title_en = "Verify UEFI boot mode"
+command = "ls /sys/firmware/efi/efivars"
+impact = "只读取固件变量目录，不修改系统。"
+risk = "readonly"
+patterns = ["ls(?: -l|-la)? /sys/firmware/efi/efivars/?"]
+produces = ["boot.uefi"]
+probe = "uefi"
+summary = "确认安装介质是否以 UEFI 模式启动。"
+success = "efivars 目录存在。"
+wiki_page = "Installation guide"
+wiki_section = "Verify the boot mode"
+wiki_url = "https://wiki.archlinux.org/title/Installation_guide#Verify_the_boot_mode"
+
+[[operations]]
+id = "check-network"
+title = "确认网络连通"
+title_en = "Check network connectivity"
+command = "ping -c 3 ping.archlinux.org"
+impact = "只发送少量网络探测包。"
+risk = "readonly"
+patterns = ["ping -c ?[1-9][0-9]* (?:ping\\.)?archlinux\\.org"]
+produces = ["network.online"]
+probe = "network"
+summary = "检查 DNS、路由与公网连接。"
+success = "探测命令成功返回。"
+wiki_page = "Installation guide"
+wiki_section = "Connect to the internet"
+wiki_url = "https://wiki.archlinux.org/title/Installation_guide#Connect_to_the_internet"
+
+[[operations]]
+id = "list-disks"
+title = "查看磁盘"
+title_en = "Inspect disks"
+command = "lsblk -J -o NAME,PATH,SIZE,TYPE,MODEL,RM"
+impact = "只读取块设备清单，不选择或修改磁盘。"
+risk = "readonly"
+patterns = ["lsblk(?: .*)?"]
+produces = ["disks.inventory"]
+probe = "disks"
+summary = "列出当前环境可见的块设备，不选择或修改磁盘。"
+success = "获得结构化磁盘清单。"
+wiki_page = "Installation guide"
+wiki_section = "Partition the disks"
+wiki_url = "https://wiki.archlinux.org/title/Installation_guide#Partition_the_disks"
