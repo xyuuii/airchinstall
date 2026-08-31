@@ -154,6 +154,10 @@ def create_tmux_session(
     if not (runtime / "ai-key").is_file():
         raise ValueError("missing runtime configuration: ai-key")
 
+    terminal = shutil.get_terminal_size((120, 30))
+    terminal_columns = columns if columns is not None else terminal.columns
+    terminal_lines = lines if lines is not None else terminal.lines
+
     if _tmux("has-session", "-t", session_name, check=False).returncode != 0:
         python = sys.executable
         daemon_command = _process_command(runtime, python, "-m", "airchinstall.app", "_daemon")
@@ -173,7 +177,19 @@ def create_tmux_session(
             str(socket_path),
         )
 
-        _tmux("new-session", "-d", "-s", session_name, "-n", "daemon", daemon_command)
+        _tmux(
+            "new-session",
+            "-d",
+            "-x",
+            str(terminal_columns),
+            "-y",
+            str(terminal_lines),
+            "-s",
+            session_name,
+            "-n",
+            "daemon",
+            daemon_command,
+        )
         try:
             _wait_for_socket(socket_path)
         except Exception:
@@ -190,9 +206,6 @@ def create_tmux_session(
             mentor_command,
         )
 
-        terminal = shutil.get_terminal_size((120, 30))
-        terminal_columns = columns if columns is not None else terminal.columns
-        terminal_lines = lines if lines is not None else terminal.lines
         if layout_mode(columns=terminal_columns, lines=terminal_lines) == "three-pane":
             _tmux(
                 "split-window",

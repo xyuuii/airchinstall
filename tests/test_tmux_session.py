@@ -50,8 +50,22 @@ def test_tmux_session_starts_real_bash_daemon_and_two_textual_clients(tmp_path, 
             capture_output=True,
             text=True,
         ).stdout.splitlines()
+        size = subprocess.run(
+            [
+                "tmux",
+                "display-message",
+                "-p",
+                "-t",
+                f"{session_name}:install",
+                "#{window_width}x#{window_height}",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
 
         assert windows == ["daemon:1", "install:3"]
+        assert size == "120x30"
         assert "bash" in commands
         assert sum(command.casefold().startswith("python") for command in commands) >= 3
 
