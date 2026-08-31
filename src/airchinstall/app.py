@@ -208,8 +208,8 @@ def create_tmux_session(
         _tmux(
             "split-window",
             "-h",
-            "-p",
-            "36",
+            "-l",
+            "36%",
             "-t",
             f"{session_name}:install.0",
             mentor_command,
@@ -219,8 +219,8 @@ def create_tmux_session(
             _tmux(
                 "split-window",
                 "-v",
-                "-p",
-                "44",
+                "-l",
+                "44%",
                 "-t",
                 f"{session_name}:install.1",
                 wiki_command,
