@@ -116,7 +116,16 @@ def _command(*parts: str) -> str:
 
 
 def _tmux(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["tmux", *args], check=check, text=True, capture_output=True)
+    completed = subprocess.run(
+        ["tmux", *args],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    if check and completed.returncode:
+        detail = completed.stderr.strip() or completed.stdout.strip() or "no diagnostic output"
+        raise RuntimeError(f"tmux {' '.join(args[:2])} failed: {detail}")
+    return completed
 
 
 def _wait_for_socket(socket_path: Path, timeout: float = 5) -> None:
