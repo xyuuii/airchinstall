@@ -20,10 +20,32 @@ from .security import redact_text
 from .ui import MentorApp, WikiApp, layout_mode
 
 SESSION_NAME = "airchinstall"
+ARCHISO_DIR = Path("/run/archiso")
+ARCHBOOT_DEFAULTS = Path("/etc/archboot/defaults")
+SUPPORTED_VIRTUALIZATIONS = {
+    "x86_64": {"qemu", "kvm"},
+    "aarch64": {"parallels"},
+}
 
 
 def runtime_dir() -> Path:
     return Path(os.environ.get("AIRCHINSTALL_RUNTIME_DIR", "/run/airchinstall"))
+
+
+def supports_virtualization(machine: str, virtualization: str) -> bool:
+    return virtualization in SUPPORTED_VIRTUALIZATIONS.get(machine, set())
+
+
+def supports_live_environment(
+    machine: str,
+    virtualization: str,
+    *,
+    archiso_dir: Path = ARCHISO_DIR,
+    archboot_defaults: Path = ARCHBOOT_DEFAULTS,
+) -> bool:
+    if machine == "aarch64" and virtualization == "parallels":
+        return archboot_defaults.is_file()
+    return archiso_dir.is_dir()
 
 
 def _config_value(runtime: Path, name: str) -> str:
@@ -73,9 +95,7 @@ async def _doctor(runtime: Path) -> list[tuple[str, bool, str]]:
     linux = sys.platform.startswith("linux")
     checks.append(("Linux", linux, sys.platform))
 
-    arch_live = Path("/run/archiso").is_dir()
-    checks.append(("Arch Live environment", arch_live, "/run/archiso"))
-
+    machine = os.uname().machine
     virtualization = "unknown"
     if shutil.which("systemd-detect-virt"):
         detected = await asyncio.to_thread(
@@ -86,7 +106,20 @@ async def _doctor(runtime: Path) -> list[tuple[str, bool, str]]:
             check=False,
         )
         virtualization = detected.stdout.strip() or "physical"
-    checks.append(("QEMU/KVM", virtualization in {"qemu", "kvm"}, virtualization))
+    live_path = (
+        ARCHBOOT_DEFAULTS
+        if machine == "aarch64" and virtualization == "parallels"
+        else ARCHISO_DIR
+    )
+    arch_live = supports_live_environment(machine, virtualization)
+    checks.append(("Supported Live environment", arch_live, str(live_path)))
+    checks.append(
+        (
+            "Supported VM",
+            supports_virtualization(machine, virtualization),
+            f"{machine}/{virtualization}",
+        )
+    )
 
     for command in ("bash", "tmux", "kmscon", "fc-match", "wiki-search"):
         location = shutil.which(command)

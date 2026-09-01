@@ -1,6 +1,7 @@
 # Security invariants
 
-- The first milestone runs only when `systemd-detect-virt --vm` returns `qemu` or `kvm`.
+- The first milestone accepts only these Live contexts: official Arch x86_64 ISO in QEMU/KVM, or an Archboot AArch64 ISO in Parallels on Apple Silicon. The Parallels launcher verifies the ISO's detached signature against Tobias Powalowski's pinned Arch developer fingerprint before attaching it. Physical hardware and all other combinations are rejected.
+- The Parallels launcher creates only a virtual disk and disables host disk, folder, clipboard and cloud-drive sharing before the Live ISO is started.
 - AI never executes commands, chooses a disk, creates a Fact or bypasses a risk decision.
 - Copyable recommendations resolve from the bundled trusted Operation Catalog; model-generated command text is never trusted.
 - Only registered read-only Probes run automatically. Catalog data cannot contain arbitrary verifier shell commands.

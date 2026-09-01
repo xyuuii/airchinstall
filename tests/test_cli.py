@@ -8,6 +8,33 @@ from airchinstall import app
 from airchinstall.app import export_transcript
 
 
+def test_supported_virtualizations_are_architecture_specific():
+    assert app.supports_virtualization("x86_64", "qemu")
+    assert app.supports_virtualization("x86_64", "kvm")
+    assert app.supports_virtualization("aarch64", "parallels")
+    assert not app.supports_virtualization("aarch64", "qemu")
+    assert not app.supports_virtualization("x86_64", "parallels")
+
+
+def test_supported_live_environment_uses_archboot_only_for_arm_parallels(tmp_path):
+    archiso = tmp_path / "archiso"
+    archiso.mkdir()
+    archboot_defaults = tmp_path / "archboot" / "defaults"
+    archboot_defaults.parent.mkdir()
+    archboot_defaults.touch()
+
+    assert app.supports_live_environment(
+        "x86_64", "qemu", archiso_dir=archiso, archboot_defaults=archboot_defaults
+    )
+    assert app.supports_live_environment(
+        "aarch64", "parallels", archiso_dir=archiso, archboot_defaults=archboot_defaults
+    )
+    archboot_defaults.unlink()
+    assert not app.supports_live_environment(
+        "aarch64", "parallels", archiso_dir=archiso, archboot_defaults=archboot_defaults
+    )
+
+
 def test_public_cli_exposes_only_start_doctor_and_export():
     completed = subprocess.run(
         [sys.executable, "-m", "airchinstall", "--help"],

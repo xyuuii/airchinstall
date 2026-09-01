@@ -13,7 +13,7 @@ Airchinstall 是运行在 Arch Linux Live TTY 中的动态安装助手。用户�
 - `tmux` 左栏是真实 Bash/PTY；右上是中文导师；右下是 ArchWiki 上下文。
 - UEFI、网络和磁盘检查可以任意顺序完成，事实图独立更新。
 - AI 只能引用可信操作目录中的命令，不能执行命令或决定目标磁盘。
-- 默认只允许在 QEMU/KVM 的官方 Arch ISO 中运行。
+- 支持官方 Arch x86_64 ISO + QEMU/KVM，以及 Archboot AArch64 ISO + Apple Silicon Parallels。
 - API Key 只保存在 `/run/airchinstall`，关机即消失。
 
 ## 在官方 Arch ISO 中运行
@@ -54,11 +54,11 @@ pytest
 airchinstall doctor
 ```
 
-QEMU 流程见 [QEMU 验证指南](docs/qemu-bootstrap.md)，架构和安全约束分别见 [architecture](docs/architecture.md) 与 [security](docs/security.md)。
+第一次实际体验请看[中文使用说明](docs/使用说明.md)。QEMU 流程见 [QEMU 验证指南](docs/qemu-bootstrap.md)，架构和安全约束分别见 [architecture](docs/architecture.md) 与 [security](docs/security.md)。
 
 研究背景见 [GitHub 与一手资料竞品研究](docs/research/arch-ai-installer-landscape.md)。
 
-> 自定义 ISO 不属于第一阶段；核心框架稳定前始终使用官方 Arch ISO + bootstrap。
+> 除官方 Arch x86_64 ISO 和已验证的 Archboot AArch64 ISO 外，自定义 ISO 不属于第一阶段。
 
 ## 许可证
 

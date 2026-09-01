@@ -9,5 +9,6 @@ build/
 dist/
 .audit/
 .qemu/
+.parallels/
 *.iso
 *.qcow2

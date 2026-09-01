@@ -23,6 +23,8 @@ PACKAGES=(
 
 YES=0
 MODE=bootstrap
+KEYRING_PACKAGE=archlinux-keyring
+KEYRING_NAME=archlinux
 
 say() { printf '[airchinstall] %s\n' "$*"; }
 die() { printf '[airchinstall] ERROR: %s\n' "$*" >&2; exit 1; }
@@ -32,16 +34,16 @@ usage() {
 Usage: bootstrap.sh [--yes] [--dry-run]
 
 Installs Airchinstall into the volatile overlay of the official Arch ISO,
-configures Chinese TTY rendering and required cloud AI, then starts tmux.
-The first milestone refuses physical hardware.
+or Archboot AArch64 ISO, configures Chinese TTY rendering and required cloud
+AI, then starts tmux. The first milestone refuses physical hardware.
 EOF
 }
 
 print_plan() {
   printf '%s\n' \
-    '1. Verify official Arch ISO and QEMU/KVM' \
+    '1. Verify a supported Arch Live ISO and virtual machine' \
     '2. Verify Live network (open iwctl when Wi-Fi needs manual setup)' \
-    "3. Install official packages: ${PACKAGES[*]}" \
+    "3. Install runtime packages: ${PACKAGES[*]}" \
     '4. Configure kmscon + Pango + CJK monospace fallback' \
     '5. Read base URL, model and API Key into /run/airchinstall (mode 600)' \
     '6. Install the volatile airchinstall CLI under /run' \
@@ -51,14 +53,27 @@ print_plan() {
 
 require_safe_context() {
   [[ $EUID -eq 0 ]] || die 'run as root inside the Arch live environment'
-  [[ -d /run/archiso ]] || die 'the first milestone only supports the official Arch ISO'
   [[ -f $PROJECT_ROOT/src/airchinstall/__init__.py ]] || die 'copy the complete repository, not bootstrap.sh alone'
   command -v pacman >/dev/null || die 'pacman is required'
   command -v systemd-detect-virt >/dev/null || die 'systemd-detect-virt is required'
-  local virtualization
+  local machine virtualization live_image
+  machine=$(uname -m)
   virtualization=$(systemd-detect-virt --vm 2>/dev/null || true)
-  [[ $virtualization == qemu || $virtualization == kvm ]] || \
-    die "QEMU/KVM required; detected: ${virtualization:-physical hardware}"
+  case "$machine:$virtualization" in
+    x86_64:qemu|x86_64:kvm)
+      live_image='official Arch x86_64 ISO'
+      [[ -d /run/archiso ]] || die "$live_image requires an archiso Live environment"
+      ;;
+    aarch64:parallels)
+      live_image='Archboot AArch64 ISO'
+      KEYRING_PACKAGE=archlinuxarm-keyring
+      KEYRING_NAME=archlinuxarm
+      [[ -f /etc/archboot/defaults ]] || die "$live_image requires an Archboot Live environment"
+      ;;
+    *)
+      die "supported VM required; detected: ${machine}/${virtualization:-physical hardware}"
+      ;;
+  esac
 }
 
 online() {
@@ -79,26 +94,26 @@ ensure_network() {
 }
 
 install_runtime() {
-  say "Installing ${#PACKAGES[@]} official Arch packages into the volatile Live overlay"
-  df -h / /run/archiso/cowspace 2>/dev/null || true
+  say "Installing ${#PACKAGES[@]} runtime packages into the volatile Live overlay"
+  df -h / 2>/dev/null || true
   if (( ! YES )); then
     local reply=''
     printf 'Install the Airchinstall runtime packages now? [y/N] '
     read -r reply </dev/tty || true
     [[ $reply =~ ^[Yy]$ ]] || die 'cancelled'
   fi
-  say 'Waiting for the official Arch package keyring'
+  say "Waiting for the $KEYRING_NAME package keyring"
   if systemctl cat pacman-init.service >/dev/null 2>&1; then
     systemctl start pacman-init.service
   else
     pacman-key --init
   fi
-  pacman-key --populate archlinux
-  # This is an ephemeral ArchISO overlay, not an installed system. A full
-  # upgrade pulls every firmware package and commonly exhausts cowspace.
-  pacman -Sy --needed --noconfirm archlinux-keyring
+  pacman-key --populate "$KEYRING_NAME"
+  # This is an ephemeral Live environment, not an installed system. A full
+  # upgrade pulls every firmware package and can exhaust its writable layer.
+  pacman -Sy --needed --noconfirm "$KEYRING_PACKAGE"
   pacman -S --needed --noconfirm "${PACKAGES[@]}" || \
-    die 'package installation failed; check network and ArchISO cowspace'
+    die 'package installation failed; check network and Live writable space'
 }
 
 configure_kmscon() {
